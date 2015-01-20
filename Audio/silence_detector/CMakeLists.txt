@@ -1,0 +1,24 @@
+
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+
+PROJECT(SILENCE_DETECTOR C CXX)
+
+SET(CMAKE_C_COMPILER gcc  )
+SET(CMAKE_CXX_COMPILER gcc )
+SET(CMAKE_CXX_FLAGS "-O3 -Wall" )
+SET( CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall")
+ADD_DEFINITIONS(-D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 )
+
+INCLUDE_DIRECTORIES(${SILENCE_DETECTOR_SOURCE_DIR} 
+                ${SILENCE_DETECTOR_SOURCE_DIR}/../common/
+                ${SILENCE_DETECTOR_SOURCE_DIR}/../../UtilClasses)
+
+SET(EXECUTABLE_OUTPUT_PATH ${SILENCE_DETECTOR_SOURCE_DIR}/bin)
+
+ADD_EXECUTABLE(silence_detect_app 
+                ${SILENCE_DETECTOR_SOURCE_DIR}/silence_detect_app.cpp
+                ${SILENCE_DETECTOR_SOURCE_DIR}/silence_detector.cpp
+                ${SILENCE_DETECTOR_SOURCE_DIR}/../../UtilClasses/ring_buf.cpp
+                )
+TARGET_LINK_LIBRARIES(silence_detect_app sndfile stdc++)
+
