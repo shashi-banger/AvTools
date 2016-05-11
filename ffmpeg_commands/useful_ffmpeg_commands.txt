@@ -1,0 +1,29 @@
+
+
+ffmpeg -i ../stream_conditioner/app/test.ts -c:v libx264 -x264opts keyint=25:min-keyint=25:scenecut=-1 -acodec copy -streamid 0:2064 -streamid 0:2068 -g 25 -vb 1800k -acodec copy ../stream_conditioner/app/test_2mbps.ts
+
+
+# For concatenating files
+ffmpeg -i "concat:ott_test.ts|ott_test.ts|ott_test.ts|ott_test.ts|ott_test.ts" -vcodec copy -acodec copy new_1hr_ott_test.ts
+
+# Add time code
+ffmpeg -i "concat:1_NHCTV018020014A01.ts|M2_EQI-NAFO002-030.ts|3_NHCTV018020014A01.ts|M1_DLK-MOMM622-030.ts|4_NHCTV018020014A01.ts|M2_EQI-NAFO002-030.ts" -acodec copy -vf "drawtext=fontsize=72:fontfile=/usr/share/fonts/truetype/freefont/FreeMono.ttf:timecode='00\:00\:00\:00':rate=25:fontcolor='white':boxcolor=0x000000AA:box=1:x=(w-tw)/4: y=h-(2*lh)" -vb 6000000 1.ts
+
+
+# Setting pes_payload_size to a low value 16 which will ensure tha even for audio every pes will have only one audio frame worths data
+ffmpeg -i NHCTV018020014A01.ts -bf 2 -vcodec h264 -vb 6000000 -acodec copy -f mpegts -pes_payload_size 16 -t 180 1_NHCTV018020014A01.ts
+
+#Another example of concatenation
+ffmpeg -f concat -i concat_test.txt -acodec copy -vf "drawtext=fontsize=72:fontfile=/usr/share/fonts/truetype/freefont/FreeMono.ttf:timecode='00\:00\:00\:00':rate=25:fontcolor='white':boxcolor=0x000000AA:box=1:x=(w-tw)/4: y=h-(2*lh)" -vb 6000000  1.ts
+
+
+# For separating audio channels
+ffmpeg -i stereo.wav -map_channel 0.0.0 left.wav -map_channel 0.0.1 right.wav
+
+
+# Covert 8 mono tracks in mxf to 4 stereo pairs
+ffmpeg -i Seg1_8Ch_03Sec.mxf -map 0:0 -filter_complex "[0:1][0:2]amerge=inputs=2[aout0]" -map "[aout0]"  -filter_complex "[0:3][0:4]amerge=inputs=2[aout1]" -map "[aout1]"  -filter_complex "[0:5][0:6]amerge=inputs=2[aout2]" -map "[aout2]"  -filter_complex "[0:7][0:8]amerge=inputs=2[aout3]" -map "[aout3]" -vcodec copy  out.mxf
+
+
+MP$Box command to export a ts file to mp4 file format
+MP4Box -add tit.ts new_file.mp4
