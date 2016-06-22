@@ -85,7 +85,8 @@ main(int argc, char *argv[])
 
             sf_write_float(af_out, adf_ds_out, odone);
             tot_samples += odone;
-            printf("olen = %d odone = %d %p del=%f\n", olen, (int)odone, process, (inp_samples_read/44.1 - tot_samples/12.));
+            printf("olen = %d odone = %d %p del=%f\n", olen, (int)odone, process, ((inp_samples_read*1000./af_info.samplerate) - ((tot_samples*1000.)/outfs)) );
+            printf("delat=%lf\n", soxr_delay(soxr));
 
             num_inp_samples = 0;
         }while(odone >= olen);
