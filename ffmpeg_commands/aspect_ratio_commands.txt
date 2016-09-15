@@ -1,0 +1,48 @@
+
+
+==============================================================================================================================
+Original content 16:9 to be converted to 4:3.
+
+Input Philips HD content
+https://www.youtube.com/watch?v=yaqe1qesQ8c
+has DAR=16:9 SAR=1:1
+
+Assuming that the original mov file is DAR of 16:9 and the resolution is either 1920x1080 or 1280x720 which implies that SAR(sample aspect ratio is 1:1)
+ffmpeg -i Philips_testp_1080iHD.mp4 -vf "scale=(iw*sar)*min(720/(iw*sar)\,576/ih):ih*min(720/(iw*sar)\,576/ih), pad=720:576:(720-iw*min(720/iw\,576/ih))/2:(576-ih*min(720/iw\,576/ih))/2" -aspect 4:3 o_t1.mov
+
+
+The above results in actual aspect ratio of 1.25 with top and bottom padding. But we have mentioned that the aspect is 4:3 using -aspect. This results in metadata which says
+DAR is 4:3. When o_t1.mov is played it will be slightly incorrect aspect ratio.
+
+To correct this problem we derive the destination SAR when destination aspect ratio is 4:3 by the followin
+             D_SAR = (4/3) / (720/576)
+             D_SAR = 1.0666
+
+ffmpeg -i Philips_testp_1080iHD.mp4 -vf "scale=(iw*sar)*min(720/(iw*sar)\,576/ih):1.06666*ih*min(720/(iw*sar)\,720/ih), pad=720:576:(720-iw*min(720/iw\,576/ih))/2:(576-1.06666*ih*min(720/iw\,576/ih))/2" -t 20 -aspect 4:3 philipa_4by3_1.mov
+
+Note the use of 1.0666 in the above command. This output "philipa_4by3_1" will be letterboxed with proper circle visible.
+
+===============================================================================================================================
+
+
+Original content is 4:3 to be converted to 16:9
+
+Input BBC content
+https://www.youtube.com/watch?v=QLS5D4on-0c
+has DAR=4:3, SAR=1:1
+
+The following commands work fine by creating pillar boxed output
+ffmpeg -i ./original_youtube/BBC_videoplayback_4by3.mp4 -vf "scale=(iw*sar)*min(1280/(iw*sar)\,720/ih):ih*min(1280/(iw*sar)\,720/ih), pad=1280:720:(1280-iw*min(1280/iw\,720/ih))/2:(720-ih*min(1280/iw\,720/ih))/2" -t 20 -aspect 16:9 bbc_16by9.mov
+
+
+If you try the following command
+ffmpeg -i ./original_youtube/BBC_videoplayback_4by3.mp4 -aspect 16:9 -s 1280x720 -t 15 b.mov
+you should see screwed up aspect ratio, because there is no padding.
+
+
+===============================================================================================================================
+
+
+Example command for converting from 640x480 4:3 to 640x480 16:9
+
+ffmpeg -i original_youtube/BBC_videoplayback_4by3.mp4 -vf "scale=0.75*(iw*sar)*min(640/(iw*sar)\,480/ih):ih*min(640/(iw*sar)\,480/ih), pad=640:480:(640-(iw*0.75))/2:(480-ih*min(640/(iw*sar)\,480/ih))/2" -aspect 16:9 -t 20 o_t1.mov

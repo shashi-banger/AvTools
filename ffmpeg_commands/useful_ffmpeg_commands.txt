@@ -31,3 +31,6 @@ MP4Box -add tit.ts new_file.mp4
 
 # The following command changes the input field order when input is DVPAL(bff) to tff and then encodes.
 ffmpeg -i HS111151B_MorningShow.mov -vf "fieldorder=tff" -map 0:v -map 0:a:0 -acodec libfdk_aac -ac 2 -flags +ilme+ildct -copyts -ar 48000 -ab 320k -vcodec h264 -pix_fmt yuv420p -bf 2 -profile:v high -vb 5000000 -g 13 -streamid 0:2064 -streamid 1:2068 -x264opts tff=1 SFFMPEG_HS111151B_MorningShow.ts
+
+# Split input stereo audio in mxf file to have 2 output mono audio tracks.
+ffmpeg -i ZF29470.mxf -filter_complex "[0:1]pan=1c|c0=c0[left];[0:1]pan=1c|c0=c1[right]" -map 0:v -map "[left]" -map "[right]" -vcodec copy -acodec pcm_s16le Z.mxf
