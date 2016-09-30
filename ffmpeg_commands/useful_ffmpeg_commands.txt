@@ -39,3 +39,11 @@ ffmpeg -i ZF29470.mxf -filter_complex "[0:1]pan=1c|c0=c0[left];[0:1]pan=1c|c0=c1
 # Split stereo to two monos and mux them into a single file as two seprate mono tracks
 ffmpeg -i "$op_mov" -map_channel 0.1.0 L.wav -map_channel 0.1.1 R.wav
 ffmpeg -i "$ip_mxf" -i L.wav  -i R.wav -map 0:0 -c:v mpeg2video -map 1:0 -acodec pcm_s24le -map 2:0 -acodec pcm_s24le "$op_mxf"
+
+
+# Command for lossless H264 encoding
+ffmpeg -i new_pal_to_ntsc_out1.mov -vcodec libx264 -crf 0 -acodec copy -aspect 4:3 n1.mov
+
+
+# Remux Mp4 file containing H264 to ts
+ffmpeg -i "CR4.mp4" -vbsf h264_mp4toannexb -pes_payload_size 16 -vcodec copy -acodec copy -streamid 0:2064 -streamid 1:2068 ~/CR4.ts
