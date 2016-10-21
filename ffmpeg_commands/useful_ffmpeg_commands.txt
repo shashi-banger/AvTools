@@ -47,3 +47,21 @@ ffmpeg -i new_pal_to_ntsc_out1.mov -vcodec libx264 -crf 0 -acodec copy -aspect 4
 
 # Remux Mp4 file containing H264 to ts
 ffmpeg -i "CR4.mp4" -vbsf h264_mp4toannexb -pes_payload_size 16 -vcodec copy -acodec copy -streamid 0:2064 -streamid 1:2068 ~/CR4.ts
+
+
+
+
+# Barcoding Mxf files with 8 monos where each pair is a unique pid.
+
+Following command merges first two mono tracks in input mxf to create a single output stereo track.
+
+ffmpeg -i SFLLDOMI360.mxf -vcodec copy -map 0:0 -filter_complex "[0:1][0:2]amerge=inputs=2[aout0]" -map "[aout0]" -acodec pcm_s24le   SFLLDOMI360_To_Barcode.mov
+
+Barcode the above generated mov file and get the barcoded output say WM_SFLLDOMI360_To_Barcode.mov.
+
+Now create the output file to be shared back with Scipps as follows. The following splits the stereo in mov and puts it as first 2 mono channels in output mxf.
+
+ffmpeg -i SFLLDOMI360.mxf  -i WM_SFLLDOMI360_To_Barcode.mov  -map 0:0  -vcodec copy -filter_complex '[1:a]channelsplit=channel_layout=stereo[L][R]' -map '[L]' -map '[R]' -map 0:2 -map 0:3 -map 0:4 -map 0:5 -map 0:6 -map 0:7 -acodec pcm_s24le   TO_SCRIPPS_SFLLDOMI360.mxf
+
+
+
