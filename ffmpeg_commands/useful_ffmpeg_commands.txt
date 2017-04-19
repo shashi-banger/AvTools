@@ -67,13 +67,17 @@ ffmpeg -i SFLLDOMI360.mxf  -i WM_SFLLDOMI360_To_Barcode.mov  -map 0:0  -vcodec c
 
 
 
-
-
 # Audio normalization usin loudnorm filter. Dependency libebur128
 
 ./ffmpeg -i /home2/sb_media/tmp/tuff/high_UM171_4.ts -af loudnorm=I=-24:TP=-2 -vcodec copy ffmpeg_high_UM171.ts
 
 
+
+
+
+# Copying unknow data pid to the output
+
+ffmpeg -i Sentry5-HD2PROD-FUT2-12HD-TriggeredByUser-20161104-134548-00-c10.ts -map 0:0 -map 0:3 -map 0:4 -acodec copy -vcodec copy -codec copy -copy_unknown  Pappu.ts
 
 
 
