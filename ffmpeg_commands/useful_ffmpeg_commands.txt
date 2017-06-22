@@ -66,6 +66,21 @@ ffmpeg -i SFLLDOMI360.mxf  -i WM_SFLLDOMI360_To_Barcode.mov  -map 0:0  -vcodec c
 
 
 
+# Barcoding files whoch have mulitiple channels e.g. 8 channels in single track
+
+1. Split the input audio into 8 separate tracks
+ffmpeg -i TKDPK174738.mxf -vcodec copy -filter_complex '[0:a]channelsplit=channel_layout=7.1[FL][FR][FC][LFE][BL][BR][SL][SR]' -acodec pcm_s16le -map 0:0 -map "[FL]" -map "[FR]" -map "[FC]" -map "[LFE]" -map "[BL]" -map "[BR]" -map "[SL]" -map [SR] t.mov
+
+2. Merge every pair to get 4 streo tracks
+ffmpeg -i t.mov -vcodec copy -map 0:0 -filter_complex "[0:1][0:2]amerge=inputs=2[aout0]" -acodec pcm_s16le -filter_complex "[0:1][0:2]amerge=inputs=2[aout1]" -filter_complex "[0:5][0:6]amerge=inputs=2[aout2]" -filter_complex "[0:7][0:8]amerge=inputs=2[aout3]" -map "[aout0]" -map "[aout1]" -map "[aout2]" -map "[aout3]" t1.mov
+
+3. Barcode t1.mov
+
+4. ffmpeg -i t1.mov -vcodec copy -map 0:0 -filter_complex "[0:1][0:2][0:3][0:4]amerge=inputs=4[aout1]" -acodec pcm_s16le -map "[aout1]" t1_amerge.mxf
+
+
+
+
 
 # Audio normalization usin loudnorm filter. Dependency libebur128
 
@@ -82,3 +97,41 @@ ffmpeg -i Sentry5-HD2PROD-FUT2-12HD-TriggeredByUser-20161104-134548-00-c10.ts -m
 
 
 
+
+
+# Crop scale and convert from 1080i50 to PAL
+
+ffmpeg -i EKP012199.mxf -vf "crop=1440:1080:240:0,scale=720:576,w3fdif,scale=720:576:interl=0:in_color_matrix=bt709:out_color_matrix=bt601,tinterlace=4:flags=vlpf" -aspect 4:3 -r 25 -acodec copy -y -vb 20000k SH_EKP012199.mxf
+
+
+
+
+
+#Encoding input MXF for Z3
+ffmpeg -i EKP012199.mxf -vf "crop=1440:1080:240:0,scale=720:576" -filter_complex "[0:1][0:2]amerge=inputs=2[aout0]" -map 0:0 -map "[aout0]" -aspect 4:3 -r 25 -acodec libfdk_aac -y -vcodec h264 -pix_fmt yuv420p -bf 2 -vb 8000k -streamid 0:2064 -streamid 1:2068 -pes_payload_size 16 1SH_EKP012199.ts
+
+
+
+
+
+#SCRIPPS Barcoding of MXF
+
+-> Convert 12 mono to 6 stereo
+
+ffmpeg -i AB0000032.mxf -vcodec copy -map 0:0 -filter_complex "[0:1][0:2]amerge=inputs=2[aout0]" -filter_complex "[0:3][0:4]amerge=inputs=2[aout1]"  -filter_complex "[0:5][0:6]amerge=inputs=2[aout2]" -filter_complex "[0:7][0:8]amerge=inputs=2[aout3]" -filter_complex "[0:9][0:10]amerge=inputs=2[aout4]"  -filter_complex "[0:11][0:12]amerge=inputs=2[aout5]" -map "[aout0]" -map "[aout1]" -map "[aout2]" -map "[aout3]" -map "[aout4]" -map "[aout5]" -acodec pcm_s24le AB0000032_STEREO.mov
+
+
+Following is incomplete. To be done
+ffmpeg -i AB0000032_STEREO_1300.mov -map 0:0  -vcodec copy -filter_complex '[0:1]channelsplit=channel_layout=stereo[L1][R1]' -filter_complex '[0:2]channelsplit=channel_layout=stereo[L2][R2]' -filter_complex '[0:3]channelsplit=channel_layout=stereo[L3][R3]' -filter_complex '[0:4]channelsplit=channel_layout=stereo[L4][R4]' -filter_complex '[0:5]channelsplit=channel_layout=stereo[L5][R5]' -filter_complex '[0:6]channelsplit=channel_layout=stereo[L6][R6]' -map '[L1]' -map '[R1]' -map '[L2]' -map '[R2]' -map '[L3]' -map '[R3]' -map '[L4]' -map '[R4]' -map '[L5]' -map '[R5]' -map '[L6]' -map '[R6]' -acodec pcm_s24le AB0000032_STEREO_1300.mxf
+
+
+
+
+# Command to add frame number at the bottom right corner
+ffmpeg -i IH_PA_SCDKNGHTME_02.ts -ss 184.960 -s 320x256 -t 60 -vf "drawtext=fontsize=24:fontfile=/usr/share/fonts/truetype/freefont/FreeMono.ttf: text=%{n}: x=w-tw: y=h-lh: fontcolor=white" -acodec mp2 o.mov
+
+
+
+# Create a jpeg image from a particular video frame
+
+ffmpeg -ss 50 -i IH_PA_NJSPINDOTD_01.ts -t 0.040 -f image2 colorbar2.jpg
