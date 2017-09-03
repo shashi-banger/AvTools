@@ -1,0 +1,6 @@
+
+
+# Following command downloads youtube video using the id present in a csv conversation_segments.csv.
+# awk commands generates pytube command line to download and ffmpeg command to extract a clip using the start and
+# end position in csv. The commands a re redirected to a bash script file which can then be executed.
+awk -F "\"*,\"*" '{print "pytube --resolution 360p --extension mp4 --filename YT_"(" https://www.youtube.com/watch?v="(; print "ffmpeg -i YT_"(".mp4 -ss "[" -t "{-[" -vcodec h264 -acodec copy -s 480x270 -vb 1200000 AUD_CLIP_"(".mov";}' conversation_segments.csv | while read i; do echo $i;done >eval_all.sh]}])))
