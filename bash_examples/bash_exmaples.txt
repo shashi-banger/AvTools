@@ -1,0 +1,35 @@
+
+# Find all files which are less than 65 seconds duration
+for f in *.mp4; do d=`mediainfo --Inform="General;%Duration%" "$f"`;if [ $d -lt 65000 ];then echo $f; fi; done
+
+
+# Filter all files greater than 800MB from a S3 bucket
+s3cmd  ls s3://amagicloud-terncp/Media/ | while read l; do v=`echo $l |  awk '{print $3}'`; if [ $v -gt 800000000 ]; then echo $l; fi; done | grep "s3://amagicloud-terncp/Media/TE[0-9_]*A1.ts" -o > large_tern_files.txt
+
+
+#Give the following json the command below extracts t_ms(USING jq) values in a range(7000,8000)
+===================
+{
+  "asset_name": "tv_videos_0001_0000.mov",
+  "confidence_threshold": 0.6,
+  "frame_rate": 23.976023976023978,
+  "scn_bndry_seq": [
+    {
+      "t_ms": 13555,
+      "v_frm_num": 325,
+      "conf": 0.9726009368896484
+    },
+    {
+      "t_ms": 14222,
+      "v_frm_num": 341,
+      "conf": 0.9716635942459106
+    }
+  ]
+}
+=====================
+for f in /data2/training_videos/VIDEO_SEGMENTATION/no_scn_change/json_scn_changes/*.json; do jq '.scn_bndry_seq[] | {"t_ms":.t_ms} | if (.t_ms > 7000 and .t_ms < 8000) then "reject" else "accept" end' $f | awk -v var=$f '{if ($1 == "\"reject\"") print var}';done  | uniq | wc -l
+
+
+
+
+
