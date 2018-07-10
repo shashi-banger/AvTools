@@ -148,3 +148,47 @@ ffmpeg -i TE00000601_01_0001_A0_HD_HD_D_PV05.ts -vf yadif -s 480x270 -vcodec lib
 
 #WebM files with all I frames
 ffmpeg -i Suits.S02E08.HDTV.x264.mp4 -c:v vp8 -intra -vb 1200k Suits.S02E08.HDTV.x264.webm
+
+
+
+# When converting a AV file to wav, if there are discontinuities in audio pts the generated wav duration
+# will not match the AV media file duration with respect to corresponding time stamps. "-async 1" option
+# comes to rescues as follows
+ffmpeg -i ffmpeg_1hr_00.mp4 -ar 48000 -async 1 ffmpeg_1hr_00.wav
+
+
+# Concat multiple files whose names are in a file to create a new file
+for f in dec_05_1hr*;do cat ${f} | sed -e "s/^/file \'/" | sed -e "s/$/\'/" > _${f}_; ffmpeg -f concat -i _${f}_ -c copy ${f}.ts; done
+
+
+# fps conversion and scale commands
+#MP4 1920x1080 @ 24fps to 1080p29.97
+ffmpeg -y -i ${in}.mp4 -map 0:v:0 -map 0:a:0 -acodec libfdk_aac -profile:a aac_low -ac 2 -ar 48000 -ab 192k -vcodec libx264 -vf 'fps=fps=29.97' -pix_fmt yuv420p -g 13 -bf 2 -profile:v high -vb 12000000  -minrate:v 12000k -maxrate:v 12000k -bufsize:v 24000k -muxrate 13000k -x264opts nal-hrd=cbr  -pes_payload_size 16 -streamid 0:2064 -streamid 1:2068 ${out}.ts
+
+#MOV 4k to 1080p29.97
+ffmpeg -y -i ${in}.mov -map 0:v:0 -map 0:a:0 -acodec libfdk_aac -profile:a aac_low -ac 2 -ar 48000 -ab 192k -vcodec libx264 -vf 'fps=fps=29.97,scale=1920:1080' -pix_fmt yuv420p -g 13 -bf 2 -profile:v high -vb 12000000  -minrate:v 12000k -maxrate:v 12000k -bufsize:v 24000k -muxrate 13000k -x264opts nal-hrd=cbr  -pes_payload_size 16 -streamid 0:2064 -streamid 1:2068 ${out}.ts
+
+
+
+# Transcode mulitple files. File paths are o_files.txt. The circus below is because the file path could have spaces which can screw the for loop
+IFS=$'\n' nohup sh -c 'for f in `cat o_files.txt`;do b=${f##*/}; ffmpeg -y -i "$f" -vb 1000k -intra -acodec mp2 -ab 192k -s 398x224 ../low_res/${b%.*}.mp4; done' &
+
+
+# Adjust peak db levels of various tracks in the media input file
+ffmpeg -i Test1_20180517.mxf -i BEFOREWATERMARK.mxf -filter_complex "[0:a:0]volume=3dB[aout0],[0:a:1]volume=3dB[aout1]" -vcodec copy -acodec pcm_s24le -map 0:v -map "[aout0]" -map "[aout1]" -map 1:3 -map 1:4 -map 1:5 -map 1:6 -map 1:7 -map 1:8 DBAdj_Test1_20180517.mxf
+
+
+# Detect audio peak db level
+ffmpeg -i BEFOREWATERMARK.wav -af 'volumedetect' -f null /dev/null
+
+
+# Generate noise wav file of 30s duration
+ffmpeg -ar 48000 -ac 2 -f s16le -i /dev/urandom -acodec copy -t 30 o.wav
+
+
+# Split media AV file in to vob audio and video files
+ffmpeg -i 1SH_EKP012199.ts -vcodec copy -an v.vob -acodec copy -vn a.vob
+
+
+# Create single resolution HLS stream
+ffmpeg -i NO_SA_TETIGO0029_01.ts -s 480x270 -vb 600000 -vcodec h264 -bf 0 -g 12 -acodec copy -f segment -segment_time 10 -segment_format mpegts -segment_list hls_media/out.m3u8 -segment_list_type m3u8 "hls_media/segment_%04d.ts"
