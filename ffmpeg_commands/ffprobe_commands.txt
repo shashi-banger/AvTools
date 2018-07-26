@@ -1,3 +1,7 @@
 
 Command to extract frame type and the corresponding timestamp
 ffprobe -select_streams v -show_frames -show_entries frame=pict_type -show_entries frame=pkt_pts_time -of csv 1.ts > 1.csv
+
+
+# Mediainfor like information using ffprobe
+ffprobe -count_packets -v quiet -print_format json -show_streams -show_format /tmp/2018-06-20_11-39-00_0_trans.ts
