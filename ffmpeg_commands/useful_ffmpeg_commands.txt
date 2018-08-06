@@ -200,6 +200,9 @@ ffmpeg -non_pcm_mode copy -i BX-MV006416_8mono_30sec.mxf -filter_complex "[0:7][
 ffmpeg -i BX-MV006416_8mono_30sec.mxf -i o.dat -ar 48000 -acodec pcm_s24le -map 0:0 -map 1:0 -vcodec copy BX-MV006416_8mono_30sec.mov
 
 
+# Split 4.0 channel layout to 2 stereo tracks. Input has a audio track having 4.0 channel layout. Transcode and give out two stereo tracks
+sudo ffmpeg -i tmp_1.mov -filter_complex "channelsplit=channel_layout=4.0[L1][R1][L2][R2],[L1][R1]amerge=inputs=2[aout0],[L2][R2]amerge=inputs=2[aout1]" -map 0:v -map [aout0] -map [aout1] -vcodec copy -acodec mp2 t1.mov
+
 
 
 
