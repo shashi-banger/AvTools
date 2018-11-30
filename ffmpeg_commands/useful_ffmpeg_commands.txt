@@ -1,5 +1,3 @@
-
-
 ffmpeg -i ../stream_conditioner/app/test.ts -c:v libx264 -x264opts keyint=25:min-keyint=25:scenecut=-1 -acodec copy -streamid 0:2064 -streamid 0:2068 -g 25 -vb 1800k -acodec copy ../stream_conditioner/app/test_2mbps.ts
 
 
@@ -204,5 +202,14 @@ ffmpeg -i BX-MV006416_8mono_30sec.mxf -i o.dat -ar 48000 -acodec pcm_s24le -map 
 sudo ffmpeg -i tmp_1.mov -filter_complex "channelsplit=channel_layout=4.0[L1][R1][L2][R2],[L1][R1]amerge=inputs=2[aout0],[L2][R2]amerge=inputs=2[aout1]" -map 0:v -map [aout0] -map [aout1] -vcodec copy -acodec mp2 t1.mov
 
 
+# Plot loudness of a standalone file, such as a MOV or MP4...
+
+ffmpeg -hide_banner -f "mp4" -i 'http://distribution.bbb3d.renderfarming.net/video/mp4/bbb_sunflower_1080p_30fps_normal.mp4' -filter_complex "ebur128=peak=true:video=1:meter=9" -c:v libx264 -c:a aac -f mpegts - | ffplay -
 
 
+# Realtime plot of a HLS stream.
+ffmpeg -hide_banner -f "hls" -http_persistent "0" -i 'https://cinedigm-thunderstorm.amagi.com/amagi_hls_data_xumo123-contv/CDN/1280x720_2328000/index.m3u8' -filter_complex "ebur128=peak=true:video=1:meter=9" -c:v libx264 -c:a aac -f mpegts - | ffplay -
+
+
+# Frame accurate low resolution conversion.
+ffmpeg -i DS_1_UH_SA_TRANRD0032_01.mov -vf yadif -s 480x270 -vcodec libx264 -acodec mp2 -ab 192000 -vb 1200000 -bf 0 -g 13 o.mov
