@@ -31,5 +31,14 @@ for f in /data2/training_videos/VIDEO_SEGMENTATION/no_scn_change/json_scn_change
 
 
 
+# RSYNC example. Sync files in EC2 instance to a local currrent folder
+nohup rsync -rave "ssh -i ~/.ssh/amagi-tornado-us-east.pem" ubuntu@34.229.60.121:/data/*.webm .
 
 
+
+#FIND files newer that a given date
+find . -type f -newermt 2017-10-30
+
+
+# MPLAYER play with timecode overlay
+mplayer -osdlevel 3 -osd-fractions 2 TE00000105_01_0005_A1.webm

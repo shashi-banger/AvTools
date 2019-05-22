@@ -213,3 +213,10 @@ ffmpeg -hide_banner -f "hls" -http_persistent "0" -i 'https://cinedigm-thunderst
 
 # Frame accurate low resolution conversion.
 ffmpeg -i DS_1_UH_SA_TRANRD0032_01.mov -vf yadif -s 480x270 -vcodec libx264 -acodec mp2 -ab 192000 -vb 1200000 -bf 0 -g 13 o.mov
+
+
+# Extract top field, scale and encode
+ffmpeg -i ChevyCruze_30s_ts.ts -vf "field=type=top, scale=w=720:h=576" -vb 10000000 o.ts
+
+# Low res file generation from HD interlaved content. Picks onlt the top field and scales it down.
+ffmpeg -i SUPERBOOK310.mxf -vf "field=type=top, scale=w=480:h=270"  -filter_complex "[0:1][0:2]amerge=inputs=2[aout0]" -map 0:0 -map "[aout0]" -vcodec libx264 -acodec mp2 -ab 192000 -vb 1200000 -bf 0 -g 13 ./lores/SUPERBOOK310.mov

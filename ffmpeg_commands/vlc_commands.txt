@@ -1,3 +1,6 @@
 
 Capture udp stream and dump raw incoming stream
 cvlc udp://@224.2.2.2:12345 --miface eth1 :demux=dump :demuxdump-file="/data/oncaster-3.2.2/tsaAnalysis/inbox/o.ts"
+
+#Dump raw stream
+vlc rtp://@127.0.0.1:2345 --sout-rtp-caching 100 :demux=dump :demuxdump-file=/tmp/o.ts
