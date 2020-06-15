@@ -5,3 +5,6 @@ ffprobe -select_streams v -show_frames -show_entries frame=pict_type -show_entri
 
 # Mediainfor like information using ffprobe
 ffprobe -count_packets -v quiet -print_format json -show_streams -show_format /tmp/2018-06-20_11-39-00_0_trans.ts
+
+ffprobe adSegment.ts  -scan_all_pmts 1  -show_streams -show_format -hide_banner -v quiet -print_format json
+

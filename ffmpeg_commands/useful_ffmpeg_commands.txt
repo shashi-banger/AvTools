@@ -191,6 +191,8 @@ ffmpeg -i 1SH_EKP012199.ts -vcodec copy -an v.vob -acodec copy -vn a.vob
 # Create single resolution HLS stream
 ffmpeg -i NO_SA_TETIGO0029_01.ts -s 480x270 -vb 600000 -vcodec h264 -bf 0 -g 12 -acodec copy -f segment -segment_time 10 -segment_format mpegts -segment_list hls_media/out.m3u8 -segment_list_type m3u8 "hls_media/segment_%04d.ts"
 
+# HLS vod creation command
+ffmpeg -y -i CAMPBELL_BDAY.ts -filter_complex "[0:v:0]tpad=stop_mode=clone:stop_duration=0.005000,setpts=(PTS-STARTPTS),fps=fps=29.970030,scale=640x480,setsar=sar=1/1,format=yuv420p[v0];[0:a:0]asetpts=(PTS-STARTPTS)[a0]" -map_chapters -1 -map [v0] -c:v libx264 -maxrate 5000000 -bufsize 3750000  -preset veryfast -profile high -vsync cfr -nal-hrd vbr -force_key_frames "expr:gte(t,n_forced*1.000)" -map [a0] -ar 48000 -c:a libfdk_aac -ac 2 -b:a 128000 -f hls -hls_time 5.000000 -hls_playlist_type vod -hls_list_size 0 -hls_segment_filename ./seg_640x480_5128000_%04d.ts -hls_flags temp_file -t 30.000000 ./seg_640x480_5128000.m3u8
 
 # Decode dolby embedded on 2 mono channels of input mxf and embed 5.1 audio into output mov
 ffmpeg -non_pcm_mode copy -i BX-MV006416_8mono_30sec.mxf -filter_complex "[0:7][0:8]amerge=inputs=2[aout0]" -map "[aout0]" -acodec pcm_s24le -f s24le o.dat
@@ -220,3 +222,15 @@ ffmpeg -i ChevyCruze_30s_ts.ts -vf "field=type=top, scale=w=720:h=576" -vb 10000
 
 # Low res file generation from HD interlaved content. Picks onlt the top field and scales it down.
 ffmpeg -i SUPERBOOK310.mxf -vf "field=type=top, scale=w=480:h=270"  -filter_complex "[0:1][0:2]amerge=inputs=2[aout0]" -map 0:0 -map "[aout0]" -vcodec libx264 -acodec mp2 -ab 192000 -vb 1200000 -bf 0 -g 13 ./lores/SUPERBOOK310.mov
+
+
+# Command for frame rate conversion using motion compensated interpolation. Converts original 25 fps to 29.97
+ffmpeg -i ChevyCruze_30s_ts.ts -vf "minterpolate=fps=29.97:mi_mode=mci" -vcodec h264 -vb 6000000 -acodec copy -bf 2 /tmp/1.ts
+
+
+# Generate blac or color video
+ffmpeg -f lavfi -i color=color=black -s 1920x1080 -pix_fmt yuv420p -codec h264 -aspect 16:9 -t 30 -muxrate 3000000 -crf 0 -vb 2000000 /tmp/black.ts
+
+
+# Mixing multiple channels into stereo. filter_complex
+ffmpeg -y -i %{IN} -map 0:v -filter_complex \"[0]pan=stereo|c0=c0|c1=c1[a];[0]pan=stereo|c0=c2|c1=c3[b];[0]pan=stereo|c0=c4|c1=c5[c];[0]pan=stereo|c0=c6|c1=c7[d]\" -map \"[a]\" -map \"[b]\" -map \"[c]\" -map \"[d]\" -acodec libfdk_aac -profile:a aac_low -ac 2 -ar 48000 -ab 192k -vcodec libx264 -filter:v \"crop=720:576:0:32\" -pix_fmt yuv420p -flags +ilme+ildct -x264opts tff=1 -x264opts nal-hrd=cbr -g 13 -aspect 4:3 -bf 2 -profile:v high -b:v 12M -minrate:v 12M -maxrate:v 12M -muxrate 14M -bufsize:v 25M -pes_payload_size 16 -streamid 0:2064 -streamid 1:2068 -streamid 2:2069 -streamid 3:2070 -streamid 4:2071 %{OUT} 2>&1
