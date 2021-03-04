@@ -234,3 +234,43 @@ ffmpeg -f lavfi -i color=color=black -s 1920x1080 -pix_fmt yuv420p -codec h264 -
 
 # Mixing multiple channels into stereo. filter_complex
 ffmpeg -y -i %{IN} -map 0:v -filter_complex \"[0]pan=stereo|c0=c0|c1=c1[a];[0]pan=stereo|c0=c2|c1=c3[b];[0]pan=stereo|c0=c4|c1=c5[c];[0]pan=stereo|c0=c6|c1=c7[d]\" -map \"[a]\" -map \"[b]\" -map \"[c]\" -map \"[d]\" -acodec libfdk_aac -profile:a aac_low -ac 2 -ar 48000 -ab 192k -vcodec libx264 -filter:v \"crop=720:576:0:32\" -pix_fmt yuv420p -flags +ilme+ildct -x264opts tff=1 -x264opts nal-hrd=cbr -g 13 -aspect 4:3 -bf 2 -profile:v high -b:v 12M -minrate:v 12M -maxrate:v 12M -muxrate 14M -bufsize:v 25M -pes_payload_size 16 -streamid 0:2064 -streamid 1:2068 -streamid 2:2069 -streamid 3:2070 -streamid 4:2071 %{OUT} 2>&1
+
+
+# HLS/Mpegts output with a specific start offset. Retimestamping
+ffmpeg -y -i PLCFEAT_17_09_11_SOL_CAMPBELL_BDAY.ts  -output_ts_offset 95435.2 -map 0:v -c:v copy -map 0:a -c:a copy -f hls -hls_time 1.000000 -hls_playlist_type vod -hls_list_size 0 -hls_segment_filename ./seg_640x480_5128000_%04d.ts -hls_flags temp_file -t 30.000000 ./seg_640x480_5128000.m3u8
+
+#Using this command to pick required frames...
+#https://ffmpeg.org/ffmpeg-filters.html
+ffmpeg -copyts -vsync 0 -segment_time_metadata 1 -i input.ffconcat -vf select=concatdec_select -af aselect=concatdec_select output.avi
+
+
+
+# Pip picture in picture example. Takes 2 ms3u8 and creates an mp4
+ffmpeg -itsoffset 30 -i ./vod1/final_vod.m3u8 -i ./vod2/final_vod.m3u8 -filter_complex "[0]scale=iw/8:ih/8[pip]; [1][pip] overlay=main_w-overlay_w-10:main_h-overlay_h-10:enable='between(t,30,50)'" -profile:v main -level 3.1 -b:v 2000000 -ab 128k -vcodec h264 -acodec libfdk_aac output.mp4
+
+
+# Decode h264 bitstream using ffmpeg
+ffmpeg -f h264 -probesize 32 -vcodec h264 -i decoderinp_notworking.h264 o.yuv
+
+
+# Encode v4l2 and also video. Live recording
+ffmpeg -f v4l2 -i /dev/video0 -f alsa -i hw:2,0 -s 640x480 -vcodec h264 -force_key_frames 00:00:00.000 -vb 0 -acodec aac o.ts
+
+
+# ZeroMq PUB_SUB example
+# ffmpeg should be build with --enable-libzmq
+# To buld libzmq do the following:
+#  wget https://github.com/zeromq/libzmq/releases/download/v4.2.2/zeromq-4.2.2.tar.gz
+# tar xvzf zeromq-4.2.2.tar.gz
+# cd zeromq-4.2.2
+# ./configure; sudo make install
+./ffmpeg -stream_loop -1 -re -i /home2/sb_media/ChevyCruze_30s_ts.ts -pix_fmt yuv420p -f rawvideo zmq:tcp://127.0.0.1:5555
+./ffplay -s 1920x1080 -pix_fmt yuv420p -f rawvideo zmq:tcp://127.0.0.1:5555
+./ffplay -s 1920x1080 -pix_fmt yuv420p -f rawvideo zmq:tcp://127.0.0.1:5555
+
+
+# Transcode with strict GOP and IDR frame occuring every 1 second
+ffmpeg -i test_file_30fps.mov  -vf "scale=384:216" -aspect 16:9  -force_key_frames "expr:gte(t,n_forced*1.0)" -vcodec h264 -x264opts keyint=15:min-keyint=15:scenecut=-1 -profile:v high -acodec aac -vb 256000 -ab 128000 -pes_payload_size 32 -streamid 0:481 -streamid 1:492 lowres_test_file_30fps.ts
+
+
+

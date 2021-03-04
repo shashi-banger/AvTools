@@ -8,3 +8,6 @@ ffprobe -count_packets -v quiet -print_format json -show_streams -show_format /t
 
 ffprobe adSegment.ts  -scan_all_pmts 1  -show_streams -show_format -hide_banner -v quiet -print_format json
 
+
+# Command to get resolution
+ffprobe -count_packets -v quiet -print_format json -show_streams -show_format $f | jq '.streams[0] | "\(.width) \(.height)"'
