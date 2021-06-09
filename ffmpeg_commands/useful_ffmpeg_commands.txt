@@ -273,4 +273,13 @@ ffmpeg -f v4l2 -i /dev/video0 -f alsa -i hw:2,0 -s 640x480 -vcodec h264 -force_k
 ffmpeg -i test_file_30fps.mov  -vf "scale=384:216" -aspect 16:9  -force_key_frames "expr:gte(t,n_forced*1.0)" -vcodec h264 -x264opts keyint=15:min-keyint=15:scenecut=-1 -profile:v high -acodec aac -vb 256000 -ab 128000 -pes_payload_size 32 -streamid 0:481 -streamid 1:492 lowres_test_file_30fps.ts
 
 
+# Graphics(tga) overlay on video with graphics looping till end of cideo
+ffmpeg -hide_banner -y -i /home/ec2-user/beach.mxf -pattern_type glob -framerate 25 -i "/home/ec2-user/ArrowTV_logo_V2/*.tga" \
+       -filter_complex "[1]loop=loop=-1[1g]" \
+       -filter_complex "[0][1g]overlay,split=3[a][b][c];[a]scale=w=640:h=360:force_original_aspect_ratio=decrease[a];[b]scale=w=1280:h=720:force_original_aspect_ratio=decrease[b];[c]scale=w=1920:h=1080:force_original_aspect_ratio=decrease[c]" \
+       -map "[a]" -map 0:a -c:v h264 -profile:v main -crf 20 -sc_threshold 0 -g 72 -keyint_min 72 -hls_time 4 -hls_playlist_type vod -b:v 800k -maxrate 856k -bufsize 1200k -b:a 96k -hls_flags single_file 360p.m3u8 \
+       -map "[b]" -map 0:a -c:a aac -ar 48000 -c:v h264 -profile:v main -crf 20 -sc_threshold 0 -g 72 -keyint_min 72 -hls_time 4 -hls_playlist_type vod -b:v 2800k -maxrate 2996k -bufsize 4200k -b:a 128k -hls_flags single_file 720p.m3u8 \
+       -map "[c]" -map 0:a -c:a aac -ar 48000 -c:v h264 -profile:v main -crf 20 -sc_threshold 0 -g 72 -keyint_min 72 -hls_time 4 -hls_playlist_type vod -b:v 5000k -maxrate 5350k -bufsize 7500k -b:a 192k -hls_flags single_file 1080p.m3u8
 
+# Encode a sequence of tga files to ts with silence audio
+ffmpeg -framerate 30000/1001 -pattern_type  glob -i "*.tga" -f lavfi -i anullsrc  -vcodec libx264 -b:v 1000k -b:a 128k -s 1920x1080 -pix_fmt yuv420p -ar 48k -streamid 0:2064 -streamid 1:2068 -shortest i60.ts
