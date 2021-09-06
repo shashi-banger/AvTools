@@ -141,7 +141,7 @@ ffmpeg -i chevy.wav -ss 10 -t 5 -af "afade=t=in:st=10:d=0.2,afade=t=out:st=14:d=
 
 
 # FFmpeg command to convert HD to low resolution ML file
-ffmpeg -i TE00000601_01_0001_A0_HD_HD_D_PV05.ts -vf yadif -s 480x270 -vcodec libx264 -acodec libfdk_aac -ab 192k -vb 1200000 -vf "drawtext=fontsize=60:fontfile=/usr/share/fonts/truetype/freefont/FreeMono.ttf: text=%{n}: x=w-tw: y=h-lh: fontcolor=white" 480x270_TE00000601_01_0001_A0_HD_HD_D_PV05.mov
+ffmpeg -i TE00000601_01_0001_A0_HD_HD_D_PV05.ts -vf yadif -s 480x270 -vcodec libx264 -acodec libfdk_aac -ab 192k -vb 1200000 -bf 0 -x264opts "keyint=48:min-keyint=48:no-scenecut" -vf "drawtext=fontsize=60:fontfile=/usr/share/fonts/truetype/freefont/FreeMono.ttf: text=%{n}: x=w-tw: y=h-lh: fontcolor=white" 480x270_TE00000601_01_0001_A0_HD_HD_D_PV05.mov
 
 
 #WebM files with all I frames
