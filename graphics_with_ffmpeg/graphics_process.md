@@ -9,16 +9,17 @@ Big Buck Bunny: https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Bu
 Examples of commands to take a sequence of png images and convert them into a
 video of predefined duration.
 
-1. Ffmpeg command to embed a single png graphics file into video.
+1. Ffmpeg command to embeds a single png graphics file into black video whose duration can be
+controlled usin *-t* option of ffmpeg.
 
 ```bash
 
 ffmpeg -f lavfi  -i color=color=black:s=1920x1080:r=30  -loop 1 -i aston_1920x128.png   -filter_complex "[0][1]overlay=x=0:y=952[a]" -t 20 -map "[a]" -c:v h264 -profile:v high -b:v 2000000 -bf 0 -g 15 -keyint_min 15 graphics_video.mov
 ```
 
-2. Ffmpegd command to embed a sequence of png graphics into video
+2. Ffmpeg command to embed a sequence of png graphics into video
 
-- Generation of sequence
+- Generation of sequence from single png
 
 ```bash
 for i in `seq 001 029`;do dest=`printf "aston_1920x128_%03d.png\n" $i`;cp aston_1920x128_000.png $dest; done
