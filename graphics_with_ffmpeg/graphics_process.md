@@ -46,3 +46,20 @@ interval within the input video.
 ffmpeg -i bbb.ts -i graphics_video.mov -filter_complex "[1:v]crop=x=0:y=950:w=1920:h=128[c];[0:v][c]overlay=x=0:y=952:enable='between(t,2,7)'[a]" -map "[a]" -c:v h264 -profile:v high -b:v 2000000 -bf 0 -g 15 -t 10 -keyint_min 15 1.mov
 ```
 
+2. Example where a graphics video of 1280x720 should be overlaid on original video which is 1920x1080 to result in 120x720 resolution output video. 
+The original video is being scaled down to 1280x720 and then the the lower third graphics is overlaid on input video in the following command.
+
+```bash
+# First scale the above graphics video to 1920x1080
+ffmpeg -i graphics_video.mov -vf "scale=w=1280:h=720" -c:v h264 -profile:v high -b:v 2000000 -bf 0 -g 15 -keyint_min 15 graphics_video_1280x720.mov
+
+# Overlay graphics on bbb.ts which 1920x1080 resolution. Note the change in w,h,x,y parameters
+ffmpeg -i bbb.ts -i graphics_video_1280x720.mov -filter_complex "[0:v]scale=w=1280:h=720[s];[1:v]crop=x=0:y=608:w=1280:h=80[c];[s][c]overlay=x=0:y=608:enable='between(t,2,7)'[a]" -map "[a]" -c:v h264 -profile:v high -b:v 2000000 -bf 0 -g 15 -t 10 -keyint_min 15 1.mov
+```
+
+## Kvazaar Command to encode Video
+
+```bash
+ffmpeg -i ~/sb_media/Big_Buck_Bunny_1080_10s_30MB.mp4 -vcodec libkvazaar -kvazaar-params tiles-width-split="128,1792",tiles-height-split="832,960",slice=tiles,mv-constraint=frametile -vb 3000000 ~/sb_media/bbb.mov
+```
+
