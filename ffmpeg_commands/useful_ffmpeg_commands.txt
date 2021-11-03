@@ -283,3 +283,11 @@ ffmpeg -hide_banner -y -i /home/ec2-user/beach.mxf -pattern_type glob -framerate
 
 # Encode a sequence of tga files to ts with silence audio
 ffmpeg -framerate 30000/1001 -pattern_type  glob -i "*.tga" -f lavfi -i anullsrc  -vcodec libx264 -b:v 1000k -b:a 128k -s 1920x1080 -pix_fmt yuv420p -ar 48k -streamid 0:2064 -streamid 1:2068 -shortest i60.ts
+
+
+# HLS encoding using libkvazaar library
+./ffmpeg -i ~/sb_media/ChevyCruze_30s_ts.ts -vcodec libkvazaar -kvazaar-params tiles-width-split="128\,1792",tiles-height-split="832\,960",preset=fast,slices=tiles,mv-constraint=frametile -g 12 -keyint_min 12 -hls_time 5 -hls_playlist_type vod -b:v 5000k -maxrate 5350k -bufsize 7500k -acodec copy ~/sb_media/chevy_hevc_1/chevy_1080p.m3u8
+
+## Possible optimizations
+./ffmpeg -i ~/sb_media/ChevyCruze_30s_ts.ts -vcodec libkvazaar -kvazaar-params tiles-width-split="128\,1792",tiles-height-split="832\,960",preset=ultrafast,slices=tiles,mv-constraint=frametile,owf=16  -hls_time 5 -hls_playlist_type vod -b:v 5000k -maxrate 5350k -bufsize 7500k -acodec copy ~/sb_media/chevy_hevc_1/chevy_1080p.m3u8
+./ffmpeg -i ~/sb_media/ChevyCruze_30s_ts.ts -vcodec libkvazaar -kvazaar-params tiles-width-split="128,1792",tiles-height-split="832,960",preset=fast,slices=tiles,mv-constraint=frametile,owf=200,threads=4 -g 25 -keyint_min 25 -hls_time 5 -hls_playlist_type vod -b:v 5000k -maxrate 5350k -bufsize 7500k -acodec copy chevy_hevc/chevy_1080p.m3u8
