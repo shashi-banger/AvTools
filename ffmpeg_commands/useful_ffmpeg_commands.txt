@@ -291,3 +291,77 @@ ffmpeg -framerate 30000/1001 -pattern_type  glob -i "*.tga" -f lavfi -i anullsrc
 ## Possible optimizations
 ./ffmpeg -i ~/sb_media/ChevyCruze_30s_ts.ts -vcodec libkvazaar -kvazaar-params tiles-width-split="128\,1792",tiles-height-split="832\,960",preset=ultrafast,slices=tiles,mv-constraint=frametile,owf=16  -hls_time 5 -hls_playlist_type vod -b:v 5000k -maxrate 5350k -bufsize 7500k -acodec copy ~/sb_media/chevy_hevc_1/chevy_1080p.m3u8
 ./ffmpeg -i ~/sb_media/ChevyCruze_30s_ts.ts -vcodec libkvazaar -kvazaar-params tiles-width-split="128,1792",tiles-height-split="832,960",preset=fast,slices=tiles,mv-constraint=frametile,owf=200,threads=4 -g 25 -keyint_min 25 -hls_time 5 -hls_playlist_type vod -b:v 5000k -maxrate 5350k -bufsize 7500k -acodec copy chevy_hevc/chevy_1080p.m3u8
+
+
+
+## SRT push from source to destination
+### Sender
+ffmpeg -re -i ~/sb_media/tornado-test/redbox_510437.mp4 -vcodec copy -acodec copy -f mpegts 'srt://localhost:5050?pkt_size=1316&mode=caller&tsbpddelay=2000000'
+### Reciever
+ffmpeg -i 'srt://:5050?mode=listener' -vcodec copy -acodec copy -f mpegts - > /dev/null
+
+
+## SRT pull from source. For usage details https://www.ffmpeg.org/ffmpeg-protocols.html#srt
+### Sender side
+ffmpeg -re -i ~/sb_media/tornado-test/redbox_510437.mp4 -vcodec copy -acodec copy -f mpegts 'srt://localhost:5050?pkt_size=1316&mode=listener&tsbpddelay=2000000'
+### Receiver side
+ffmpeg -i 'srt://:5050?mode=caller' -vcodec copy -acodec copy -f mpegts - > /dev/null
+
+
+
+## Mpeg DASH encoding example. Below. Not sure if it is working
+
+ffmpeg \
+-t 5 \
+-loglevel verbose \
+-re -f lavfi -i anullsrc=r=48000 \
+-map 0:a -c:a aac -ar 48000 -ab:a:0 64k -metadata:s:a:0 language=eng \
+-fflags +genpts \
+-seg_duration 1.92 \
+-frag_duration 1.92 \
+-use_template 1 \
+-use_timeline 1 \
+-dash_segment_type mp4 \
+-window_size 10 \
+-mpd_profile dash \
+-hls_playlist 1 \
+-hls_master_name foo.m3u8 \
+-init_seg_name '$RepresentationID$.dash' \
+-media_seg_name '$RepresentationID$-$Time$.dash' \
+-flags +global_header \
+-fflags genpts \
+-format_options "movflags=empty_moov+separate_moof+default_base_moof" \
+-f dash foo.mpd
+
+
+## Another example of MPEG Dash
+
+./ffmpeg -re -i ~/videos/BigBuckBunny.mp4 -loglevel debug \
+  -map 0 -map 0 -map 0 -c:a aac -c:v libx264 -tune zerolatency \
+  -b:v:0 2000k -s:v:0 1280x720 -profile:v:0 high -b:v:1 1500k -s:v:1 640x340  -profile:v:1 main -b:v:2 500k -s:v:2 320x170  -profile:v:2 baseline -bf 1 \
+ -keyint_min 24 -g 24 -sc_threshold 0 -b_strategy 0 -ar:a:1 22050 -use_timeline 1 -use_template 1 -window_size 5 \
+ -adaptation_sets "id=0,streams=v id=1,streams=a" -hls_playlist 1 -seg_duration 3 -streaming 1 \
+ -strict experimental -lhls 1 -remove_at_exit 0 -master_m3u8_publish_rate 3 \
+ -f dash -method PUT -http_persistent 1  https://example.com/manifest.mpd
+
+
+## Record input HLS specific variant to file system with timestamp overlaid
+
+/Users/shashidhar/sb_work/sb_github/ffmpeg/FFmpeg/ffmpeg -re -i https://tastemade-triplelift-plex.amagi.tv/playlistR404p.m3u8 -vf drawtext="fontfile=monofonto.ttf: fontsize=48: box=1: boxcolor=black@0.75: boxborderw=5: fontcolor=white: x=(w-text_w)/2: y=((h-text_h)/2)+((h-text_h)/4): text='%{gmtime\:%H\\\\\:%M\\\\\:%S}'" -c:v libx264 -preset:v fast -bf 2 -g 30 -sc_threshold 0 -b_strategy 0 -ar:a:1 22050  -use_template 1 -strftime 1 -strftime_mkdir 1 -hls_time 20 -hls_segment_type fmp4 -hls_segment_filename '%Y%m%d/%H-%M-%S-%s.mp4' -hls_playlist 1   out.m3u8
+
+
+## Generating colorband hls video only god
+ffmpeg \
+       -filter_complex "testsrc=size=1920x1080,realtime,format=yuv420p,fps=fps=30000/1001[v];[v]split=3[a][b][c];[a]scale=w=640:h=360:force_original_aspect_ratio=decrease[a];[b]scale=w=1280:h=720:force_original_aspect_ratio=decrease[b];[c]scale=w=1920:h=1080:force_original_aspect_ratio=decrease[c]" \
+       -map "[a]" -c:v h264 -profile:v main -crf 20 -sc_threshold 0 -g 72 -keyint_min 72 -hls_time 4 -hls_playlist_type vod -hls_segment_filename "360p_segment_%05d.ts" -b:v 800k -maxrate 856k -bufsize 1200k  360p.m3u8 \
+       -map "[b]"  -c:v h264 -profile:v main -crf 20 -sc_threshold 0 -g 72 -keyint_min 72 -hls_time 4 -hls_playlist_type vod -hls_segment_filename "720p_segment_%05d.ts" -b:v 2800k -maxrate 2996k -bufsize 4200k 720p.m3u8 \
+       -map "[c]" -c:v h264 -profile:v main -crf 20 -sc_threshold 0 -g 72 -keyint_min 72 -hls_time 4 -hls_playlist_type vod -hls_segment_filename '1080p_segment_%05d.ts' -b:v 5000k -maxrate 5350k -bufsize 7500k 1080p.m3u8
+
+
+
+# Copy time stamps from input to output
+ffmpeg -y -copyts -i content.ts  -i graphics.mov -filter_complex "[0:v][1:v]overlay=x=0:y=634[vout]" -map "[vout]" -c:v libx264 -profile:v high -b:v 3500000 -bf 0 -g 30 -keyint_min 15 -map 0:a -c:a copy -mpegts_copyts 1 test.ts
+
+
+## Detect Black frames
+ffprobe -f lavfi -i "movie=HomeWithTori-series-s1-e1-eng.ts,blackdetect[out0]" -show_entries tags=lavfi.black_start,lavfi.black_end -of default=nw=1 -v quiet
